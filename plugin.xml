@@ -24,9 +24,12 @@
 		<preference name="APP_ID" />	
 <!--
 		<dependency id="com.google.playservices" url="https://github.com/MobileChromeApps/google-play-services" commit="00f511a8ce332d4586f067240460bfe978ace2ae" />
--->		
-		<dependency id="com.google.playservices@21.0.0" />		
-		<dependency id="android.support.v4@1.0.0" />
+-->
+		<framework src="com.android.support:support-v13:23+" />
+		<framework src="com.google.android.gms:play-services-games:+" />
+		<framework src="com.google.android.gms:play-services-drive:+" />
+		<framework src="com.google.android.gms:play-services-plus:+" />
+		<framework src="com.google.android.gms:play-services-appstate:7.8.0" />
 
 	    <config-file target="res/xml/config.xml" parent="/*">
 			<feature name="Game" >
