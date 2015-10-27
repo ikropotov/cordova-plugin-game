@@ -53,7 +53,8 @@ Achievement
 https://cordova.apache.org/docs/en/edge/guide_cli_index.md.html#The%20Command-Line%20Interface - npm install -g cordova@5.0.0
 ```c
 //caution: replace 1064334934918 with your google play game app id
-cordova plugin add cordova-plugin-game --variable APP_ID="1064334934918"
+//original plugin: cordova plugin add cordova-plugin-game --variable APP_ID="1064334934918"
+cordova plugin add https://github.com/ikropotov/cordova-plugin-game --variable APP_ID="1064334934918"
 ```
 ## Xdk ##
 //caution: replace 1064334934918 with your google play game app id
