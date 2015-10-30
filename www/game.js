@@ -2,12 +2,12 @@
 module.exports = {
 	_loggedin: false,
 	tag: '',
-	setUp: function (options) {
+	setUp: function (sever_client_id) {
 		cordova.exec(
 			function (result) {
 			},
 			function (error) {
-			}, "Game", "setUp", [options]);
+			}, "Game", "setUp", [sever_client_id]);
 	},
 	login: function (tag) {
 		var self = this;
@@ -28,8 +28,12 @@ module.exports = {
 		var self = this;
 		cordova.exec(function (result) {
 				self._loggedin = false;
+				if (self.onLogoutSucceeded)
+					self.onLogoutSucceeded();
 			},
 			function (error) {
+				if (self.onLogoutFailed)
+					self.onLogoutFailed();
 			}, "Game", "logout", []);
 	},
 	isLoggedIn: function () {
@@ -125,8 +129,22 @@ module.exports = {
 					self.onResetAchievementsFailed();
 			}, "Game", "resetAchievements", []);
 	},
+	getTokenCode: function () {
+		var self = this;
+		cordova.exec(function (result) {
+				var userServerCode = result;
+				if (self.onGetTokenCodeSucceeded)
+					self.onGetTokenCodeSucceeded(userServerCode);
+			},
+			function (error) {
+				if (self.onGetTokenCodeFailed)
+					self.onGetTokenCodeFailed(error);
+			}, "Game", "getTokenCode", []);
+	},
 	onLoginSucceeded: null,
 	onLoginFailed: null,
+	onLogoutSucceeded: null,
+	onLogoutFailed: null,
 	onGetPlayerImageSucceeded: null,
 	onGetPlayerImageFailed: null,
 	onGetPlayerScoreSucceeded: null,
@@ -138,5 +156,7 @@ module.exports = {
 	onIncrementAchievementSucceeded: null,
 	onIncrementAchievementFailed: null,
 	onResetAchievementsSucceeded: null,
-	onResetAchievementsFailed: null
+	onResetAchievementsFailed: null,
+	onGetTokenCodeSucceeded: null,
+	onGetTokenCodeFailed: null
 };

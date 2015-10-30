@@ -42,6 +42,7 @@ import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
 import com.google.android.gms.auth.UserRecoverableAuthException;
+import android.os.AsyncTask;
 
 //Util
 import android.app.AlertDialog;
@@ -74,6 +75,7 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 	private CallbackContext submitScoreCC;
 	private CallbackContext unlockAchievementCC;
 	private CallbackContext incrementAchievementCC;
+	private CallbackContext getTokenCodeCC;
 
 	public void initialize(CordovaInterface cordova, CordovaWebView webView) {
 		super.initialize(cordova, webView);
@@ -103,7 +105,7 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 			//Activity activity=cordova.getActivity();
 			//webView
 			//
-			SERVER_CLIENT_ID = args.getJSONObject(0).getString("server_client_id");
+			SERVER_CLIENT_ID = args.getString(0);
 			final CallbackContext delayedCC = callbackContext;
 			cordova.getActivity().runOnUiThread(new Runnable(){
 				@Override
@@ -415,6 +417,33 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 
 			return true;
 		}
+		else if (action.equals("getTokenCode")) {
+			//Activity activity=cordova.getActivity();
+			//webView
+			//
+
+			getTokenCodeCC = callbackContext;
+
+			final CallbackContext delayedCC = callbackContext;
+			cordova.getActivity().runOnUiThread(new Runnable(){
+				@Override
+				public void run() {
+					if (getGameHelper().isSignedIn()) {
+						_getTokenCode();
+					}
+					else {
+						//PluginResult pr = new PluginResult(PluginResult.Status.OK);
+						//pr.setKeepCallback(true);
+						//delayedCC.sendPluginResult(pr);
+						PluginResult pr = new PluginResult(PluginResult.Status.ERROR, "Not logged in");
+						//pr.setKeepCallback(true);
+						delayedCC.sendPluginResult(pr);
+					}
+				}
+			});
+
+			return true;
+		}
 
 		return false; // Returning false results in a "MethodNotFound" error.
 	}
@@ -422,7 +451,6 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 	//-------------------------------------
 	private void _setUp(){
 		getGameHelper().setup(this);//public void setup(GameHelperListener listener) {
-		this.webView.loadUrl("javascript:console.log( 'SERVER_CLIENT_ID: '," + SERVER_CLIENT_ID + ");");
 		cordova.setActivityResultCallback(this);
 
 	}
@@ -681,41 +709,67 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 
 	}
 
-	private String getServerToken(String... strings) {
-		Context c = this.cordova.getActivity().getApplicationContext();
-		Bundle appActivities = new Bundle();
-		String scopes = "oauth2:server:client_id:"
-		+ SERVER_CLIENT_ID
-		+ ":api_scope:"
-		+ Scopes.PLUS_LOGIN + " " + Scopes.GAMES; // You must have matching scopes everywhere!
-		this.webView.loadUrl("javascript:console.log( 'scopes: '," + scopes + ");");
-		String code;
-		this.webView.loadUrl("javascript:console.log( 'context: ', " + c + ");");
-		try {
-			code = GoogleAuthUtil.getToken(
-				c,                             // Context context
-				strings[0],                    // String accountName
-				scopes,                        // String scope
-				appActivities                  // Bundle bundle
-			);
-		} catch (IOException transientEx) {
-			return null;
-		} catch (UserRecoverableAuthException e) {
-			// Needs sign in, so fire it! This will likely happen the
-			// first time. Results go to onActivityResult
-			// startActivityForResult(e.getIntent(), PERMISSION_REQ);
-			_login();
-			return null;
-		} catch (GoogleAuthException authEx) {
-			return null;
-		}
-		return code;
+	private void _getTokenCode() {
+		String plusAccountName = Plus.AccountApi.getAccountName (getGameHelper().getApiClient());
+		this.webView.loadUrl(String.format("javascript:console.log(\"%s\",\"%s\");", "plusAccountName", plusAccountName));
+		new RetrieveCodeTask().execute(plusAccountName);
 	}
 
+	private Context _getApplicationContext() {
+		return this.cordova.getActivity().getApplicationContext();
+	}
 
-	//GameHelper.GameHelperListener
-	@Override
-	public void onSignInSucceeded() {
+	private class RetrieveCodeTask extends AsyncTask<String, Void, PluginResult> {
+		@Override
+		protected PluginResult doInBackground(String... strings) {
+			Context c = _getApplicationContext();
+			Bundle appActivities = new Bundle();
+			String scopes = "oauth2:server:client_id:"
+			+ SERVER_CLIENT_ID
+			+ ":api_scope:"
+			+ Scopes.PLUS_LOGIN + " " + Scopes.GAMES; // You must have matching scopes everywhere!
+			System.out.println("scopes");
+			System.out.println(scopes);
+			// this.webView.loadUrl(String.format("javascript:console.log(\"%s\",\"%s\");", "scopes", scopes));
+			String code;
+			// this.webView.loadUrl(String.format("javascript:console.log(\"%s\",\"%s\");", "context", c));
+			System.out.println("context");
+			System.out.println(c);
+			PluginResult pr;
+			try {
+				code = GoogleAuthUtil.getToken(
+					c,                             // Context context
+					strings[0],               // String accountName
+					scopes,                        // String scope
+					appActivities                  // Bundle bundle
+				);
+				pr = new PluginResult(PluginResult.Status.OK, code);
+			} catch (IOException transientEx) {
+				pr = new PluginResult(PluginResult.Status.ERROR, "IOException");
+			} catch (UserRecoverableAuthException e) {
+				// Needs sign in, so fire it! This will likely happen the
+				// first time. Results go to onActivityResult
+				// startActivityForResult(e.getIntent(), PERMISSION_REQ);
+
+				// _login();
+				pr = new PluginResult(PluginResult.Status.ERROR, "UserRecoverableAuthException");
+			} catch (GoogleAuthException authEx) {
+				pr = new PluginResult(PluginResult.Status.ERROR, "AuthException");
+			}
+		
+			return pr;
+    	}
+
+    	@Override
+	    protected void onPostExecute(PluginResult pr) {
+	      super.onPostExecute(pr);
+	      getTokenCodeCC.sendPluginResult(pr);
+   		}
+	}
+
+    //GameHelper.GameHelperListener
+    @Override
+    public void onSignInSucceeded() {
 		//Util.alert(cordova.getActivity(), "onSignInSucceeded");
 
 		//https://github.com/freshplanet/ANE-Google-Play-Game-Services/blob/master/android/src/com/freshplanet/googleplaygames/functions/AirGooglePlayGamesGetActivePlayerName.java
@@ -758,7 +812,7 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 		PluginResult pr = new PluginResult(PluginResult.Status.ERROR);
 		//pr.setKeepCallback(true);
 		loginCC.sendPluginResult(pr);
-	}
+    }
 
 	//CordovaPlugin
 	@Override
