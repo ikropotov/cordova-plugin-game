@@ -68,6 +68,7 @@ class Util {
 public class Game extends CordovaPlugin implements GameHelper.GameHelperListener{
 	private String LOG_TAG = "Game";
 	private String SERVER_CLIENT_ID;
+	private final int PERMISSION_REQ = 42303;
 	private GameHelper mHelper;
 	private CallbackContext loginCC;
 	private CallbackContext getPlayerImageCC;
@@ -719,6 +720,10 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 		return this.cordova.getActivity().getApplicationContext();
 	}
 
+	private void _startActivityForResult(Intent intent, int code) {
+		this.cordova.getActivity().startActivityForResult(intent, code);
+	}
+
 	private class RetrieveCodeTask extends AsyncTask<String, Void, PluginResult> {
 		@Override
 		protected PluginResult doInBackground(String... strings) {
@@ -752,11 +757,16 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 				// startActivityForResult(e.getIntent(), PERMISSION_REQ);
 
 				// _login();
+				System.out.println("UserRecoverableAuthException");
+				System.out.println(e);
+
+				_startActivityForResult(e.getIntent(), PERMISSION_REQ);
 				pr = new PluginResult(PluginResult.Status.ERROR, "UserRecoverableAuthException");
 			} catch (GoogleAuthException authEx) {
+			  System.out.println(authEx);
 				pr = new PluginResult(PluginResult.Status.ERROR, "AuthException");
 			}
-		
+
 			return pr;
     	}
 
@@ -768,6 +778,11 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 	}
 
     //GameHelper.GameHelperListener
+    @Override
+    public String getServerClientId() {
+		return SERVER_CLIENT_ID;
+	}
+
     @Override
     public void onSignInSucceeded() {
 		//Util.alert(cordova.getActivity(), "onSignInSucceeded");
