@@ -3,8 +3,11 @@ package com.google.example.games.basegameutils;
 import java.io.IOException;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.json.JSONObject;
+import org.json.JSONException;
 
 import android.util.Log;
 
@@ -15,6 +18,9 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Scope;
@@ -27,9 +33,38 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
     // Print debug logs?
     boolean mDebugLog = false;
     JSONObject SERVER_SETTINGS;
+    String CHECK_TOKEN_URL;
+    String SELECT_SCOPES_URL;
+    String EXCHANGE_TOKEN_URL;
 
     public GameHelperToken(JSONObject serverSettings) {
+
         SERVER_SETTINGS = serverSettings;
+        
+        try {
+
+            SELECT_SCOPES_URL = SERVER_SETTINGS.getString("serverURLProtocol") + 
+                              "://" +
+                              SERVER_SETTINGS.getString("serverURL") + 
+                              SERVER_SETTINGS.getJSONObject("gamesUrls").getString("scopes");
+
+            CHECK_TOKEN_URL = SERVER_SETTINGS.getString("serverURLProtocol") + 
+                              "://" +
+                              SERVER_SETTINGS.getString("serverURL") + 
+                              SERVER_SETTINGS.getJSONObject("gamesUrls").getString("check_token");
+
+            EXCHANGE_TOKEN_URL = SERVER_SETTINGS.getString("serverURLProtocol") + 
+                              "://" +
+                              SERVER_SETTINGS.getString("serverURL") + 
+                              SERVER_SETTINGS.getJSONObject("gamesUrls").getString("auth_token");
+
+        } catch (JSONException ex) {
+            Log.e(TAG, "Error in server settings.", ex);
+            CHECK_TOKEN_URL = "";
+            SELECT_SCOPES_URL = "";
+            EXCHANGE_TOKEN_URL = "";
+        }
+
     }
 
 
@@ -50,29 +85,26 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
     private boolean serverHasTokenFor(String idToken) {
         debugLog("idToken =" + idToken);
 
-/*
         HttpClient httpClient = new DefaultHttpClient();
-        String CHECK_TOKEN_URL = "";
-        HttpGet httpGet = new HttpGet(CHECK_TOKEN_URL);
+        HttpPost httpPost = new HttpPost(CHECK_TOKEN_URL);
         try {
-                HttpResponse httpResponse = httpClient.execute(httpGet);
-                int responseCode = httpResponse.getStatusLine().getStatusCode();
-                String responseBody = EntityUtils.toString(httpResponse.getEntity());
+            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
+            nameValuePairs.add(new BasicNameValuePair("idToken", idToken));
+            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
-                // Convert the response to set of Scope objects.
-                if (responseCode == 200) {
-                    return true;
-                } else {
-                    Log.e(TAG, "Error in getting server scopes: " + responseCode);
-                }
-
-            } catch (ClientProtocolException e) {
-                Log.e(TAG, "Error in getting server scopes.", e);
-            } catch (IOException e) {
-                Log.e(TAG, "Error in getting server scopes.", e);
-            }
-*/
-        return false;
+            HttpResponse response = httpClient.execute(httpPost);
+            int statusCode = response.getStatusLine().getStatusCode();
+            final String responseBody = EntityUtils.toString(response.getEntity());
+            Log.i(TAG, "Code: " + statusCode);
+            Log.i(TAG, "Resp: " + responseBody);
+            return (statusCode == 200);
+        } catch (ClientProtocolException e) {
+            Log.e(TAG, "Error in auth code exchange.", e);
+            return false;
+        } catch (IOException e) {
+            Log.e(TAG, "Error in auth code exchange.", e);
+            return false;
+        }
     }
 
     @Override
@@ -83,15 +115,7 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
         // thread it is OK to do synchronous network access in this check.
         boolean serverHasToken = serverHasTokenFor(idToken);
         Log.i(TAG, "Server has token: " + String.valueOf(serverHasToken));
-
-        HashSet<Scope> serverScopeSet = new HashSet<Scope>();
-        serverScopeSet.add(Games.SCOPE_GAMES);
-        debugLog("onCheckServerAuthorization");
-        debugLog("onCheckServerAuthorization idToken=" + idToken);
-        debugLog("onCheckServerAuthorization scopeSet=" + scopeSet);
-        debugLog("serverScopeSet=" + serverScopeSet);
-        return CheckResult.newAuthRequiredResult(serverScopeSet);
-/*
+        
         if (!serverHasToken) {
             // Server does not have a valid refresh token, so request a new
             // auth code which can be exchanged for one.  This will cause the user to see the
@@ -101,15 +125,6 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
             // can be distinct from the scopes granted to the client.  By getting these values
             // from the server, you can change your server's permissions without needing to
             // recompile the client application.
-
-            // String[] scopeStrings = [
-            // "https://www.googleapis.com/auth/plus.login",
-            // "https://www.googleapis.com/auth/plus.me",
-            // "https://www.googleapis.com/auth/plus.login",
-            // "https://www.googleapis.com/auth/userinfo.email",
-            // "https://www.googleapis.com/auth/userinfo.profile"
-            // = 'https://www.googleapis.com/auth/plus.stream.write'
-            // ES] = 'https://www.googleapis.com/auth/plus.stream.write']
 
 
             HttpClient httpClient = new DefaultHttpClient();
@@ -149,7 +164,7 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
             // ask the user for offline access again.
             return CheckResult.newAuthNotRequiredResult();
         }
-*/
+
     }
 
     @Override
@@ -162,9 +177,7 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
         debugLog("onUploadServerAuthCode");
         debugLog("idToken=" + idToken);
         debugLog("serverAuthCode=" + serverAuthCode);
-        return true;
-/*
-        EXCHANGE_TOKEN_URL =  ""; //TODO
+
         HttpClient httpClient = new DefaultHttpClient();
         HttpPost httpPost = new HttpPost(EXCHANGE_TOKEN_URL);
 
@@ -189,6 +202,6 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
             Log.e(TAG, "Error in auth code exchange.", e);
             return false;
         }
-*/
+
     }
 }
