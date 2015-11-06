@@ -18,6 +18,7 @@ import android.util.Log;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import android.content.Intent;
 import com.google.example.games.basegameutils.GameHelper;
+import com.google.example.games.basegameutils.GameHelperToken;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.appstate.AppStateManager;
@@ -67,9 +68,10 @@ class Util {
 
 public class Game extends CordovaPlugin implements GameHelper.GameHelperListener{
 	private String LOG_TAG = "Game";
-	private String SERVER_CLIENT_ID;
+	public JSONObject SERVER_SETTINGS;
 	private final int PERMISSION_REQ = 42303;
 	private GameHelper mHelper;
+	private GameHelperToken mHelperToken;
 	private CallbackContext loginCC;
 	private CallbackContext getPlayerImageCC;
 	private CallbackContext getPlayerScoreCC;
@@ -106,7 +108,7 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 			//Activity activity=cordova.getActivity();
 			//webView
 			//
-			SERVER_CLIENT_ID = args.getString(0);
+			SERVER_SETTINGS = args.getJSONObject(0);
 			final CallbackContext delayedCC = callbackContext;
 			cordova.getActivity().runOnUiThread(new Runnable(){
 				@Override
@@ -462,6 +464,7 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 		}
 		return mHelper;
 	}
+
 	private void _login(){
 		//getGameHelper().beginUserInitiatedSignIn();
 		getGameHelper().onStart(this.cordova.getActivity());
@@ -729,19 +732,20 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 		protected PluginResult doInBackground(String... strings) {
 			Context c = _getApplicationContext();
 			Bundle appActivities = new Bundle();
-			String scopes = "oauth2:server:client_id:"
-			+ SERVER_CLIENT_ID
-			+ ":api_scope:"
-			+ Scopes.PLUS_LOGIN + " " + Scopes.GAMES; // You must have matching scopes everywhere!
-			System.out.println("scopes");
-			System.out.println(scopes);
-			// this.webView.loadUrl(String.format("javascript:console.log(\"%s\",\"%s\");", "scopes", scopes));
-			String code;
-			// this.webView.loadUrl(String.format("javascript:console.log(\"%s\",\"%s\");", "context", c));
-			System.out.println("context");
-			System.out.println(c);
 			PluginResult pr;
 			try {
+				String scopes = "oauth2:server:client_id:"
+				+ SERVER_SETTINGS.getString("serverClientId")
+				+ ":api_scope:"
+				+ Scopes.PLUS_LOGIN + " " + Scopes.GAMES; // You must have matching scopes everywhere!
+				System.out.println("scopes");
+				System.out.println(scopes);
+				// this.webView.loadUrl(String.format("javascript:console.log(\"%s\",\"%s\");", "scopes", scopes));
+				String code;
+				// this.webView.loadUrl(String.format("javascript:console.log(\"%s\",\"%s\");", "context", c));
+				System.out.println("context");
+				System.out.println(c);
+			
 				code = GoogleAuthUtil.getToken(
 					c,                             // Context context
 					strings[0],               // String accountName
@@ -765,6 +769,8 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 			} catch (GoogleAuthException authEx) {
 			  System.out.println(authEx);
 				pr = new PluginResult(PluginResult.Status.ERROR, "AuthException");
+			} catch (JSONException ex) {
+				pr = new PluginResult(PluginResult.Status.ERROR, "Server client missing.");
 			}
 
 			return pr;
@@ -778,9 +784,23 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 	}
 
     //GameHelper.GameHelperListener
+	@Override
+	public GameHelperToken getTokenHandler() {
+		if (mHelperToken == null) {
+			mHelperToken = new GameHelperToken(SERVER_SETTINGS);
+			mHelperToken.enableDebugLog(true);
+		}
+		return mHelperToken;
+	}
+
     @Override
     public String getServerClientId() {
-		return SERVER_CLIENT_ID;
+    	try {
+    		return SERVER_SETTINGS.getString("serverClientId");
+    	} catch (JSONException ex) {
+    		Log.e(LOG_TAG, "serverClientId ERROR = " + ex);
+    		return "";
+    	}
 	}
 
     @Override

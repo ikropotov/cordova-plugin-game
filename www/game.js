@@ -2,12 +2,12 @@
 module.exports = {
 	_loggedin: false,
 	tag: '',
-	setUp: function (sever_client_id) {
+	setUp: function (server_settings) {
 		cordova.exec(
 			function (result) {
 			},
 			function (error) {
-			}, "Game", "setUp", [sever_client_id]);
+			}, "Game", "setUp", [server_settings]);
 	},
 	login: function (tag) {
 		var self = this;
@@ -21,7 +21,7 @@ module.exports = {
 			function (error) {
 				self.tag = tag;
 				if (self.onLoginFailed)
-					self.onLoginFailed();
+					self.onLoginFailed(error);
 			}, "Game", "login", []);
 	},
 	logout: function () {
@@ -33,7 +33,7 @@ module.exports = {
 			},
 			function (error) {
 				if (self.onLogoutFailed)
-					self.onLogoutFailed();
+					self.onLogoutFailed(error);
 			}, "Game", "logout", []);
 	},
 	isLoggedIn: function () {

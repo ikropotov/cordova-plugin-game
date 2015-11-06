@@ -32,6 +32,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 
+import org.apache.http.client.ClientProtocolException;
+
 import com.google.android.gms.appstate.AppStateManager;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -50,8 +52,7 @@ import com.google.android.gms.plus.Plus;
 import com.google.android.gms.plus.Plus.PlusOptions;
 
 public class GameHelper implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
-        GoogleApiClient.ServerAuthCodeCallbacks {
+    GoogleApiClient.OnConnectionFailedListener {
 
     static final String TAG = "GameHelper";
 
@@ -82,8 +83,11 @@ public class GameHelper implements GoogleApiClient.ConnectionCallbacks,
         /** Called when sign-in succeeds. */
         void onSignInSucceeded();
 
-        /** Get server client ID for offline auth from server*/
+        /** Get server client ID for offline auth from server */
         String getServerClientId();
+
+        /** Get token handler class */
+        GoogleApiClient.ServerAuthCodeCallbacks getTokenHandler();
     }
 
     // configuration done?
@@ -290,12 +294,12 @@ public class GameHelper implements GoogleApiClient.ConnectionCallbacks,
         if (0 != (mRequestedClients & CLIENT_GAMES)) {
             builder.addApi(Games.API, mGamesApiOptions);
             builder.addScope(Games.SCOPE_GAMES);
+            builder.requestServerAuthCode(mListener.getServerClientId(), mListener.getTokenHandler());
         }
 
         if (0 != (mRequestedClients & CLIENT_PLUS)) {
             builder.addApi(Plus.API);
             builder.addScope(Plus.SCOPE_PLUS_LOGIN);
-            builder.requestServerAuthCode(mListener.getServerClientId(), this);
         }
 
         if (0 != (mRequestedClients & CLIENT_APPSTATE)) {
@@ -1071,122 +1075,6 @@ public class GameHelper implements GoogleApiClient.ConnectionCallbacks,
     public void setConnectOnStart(boolean connectOnStart) {
         debugLog("Forcing mConnectOnStart=" + connectOnStart);
         mConnectOnStart = connectOnStart;
-    }
-
-    @Override
-    public CheckResult onCheckServerAuthorization(String idToken, Set<Scope> scopeSet) {
-        Log.i(TAG, "Checking if server is authorized.");
-
-        // Check if the server has a token.  Since this callback executes in a background
-        // thread it is OK to do synchronous network access in this check.
-        // boolean serverHasToken = serverHasTokenFor(idToken); TODO check TOKEN
-        boolean serverHasToken = false;
-        Log.i(TAG, "Server has token: " + String.valueOf(serverHasToken));
-
-        HashSet<Scope> serverScopeSet = new HashSet<Scope>();
-        serverScopeSet.add(Games.SCOPE_GAMES);
-        debugLog("onCheckServerAuthorization");
-        debugLog("serverScopeSet=" + serverScopeSet);
-        return CheckResult.newAuthNotRequiredResult();
-/*
-        if (!serverHasToken) {
-            // Server does not have a valid refresh token, so request a new
-            // auth code which can be exchanged for one.  This will cause the user to see the
-            // consent dialog and be prompted to grant offline access.
-
-            // Ask the server which scopes it would like to have for offline access.  This
-            // can be distinct from the scopes granted to the client.  By getting these values
-            // from the server, you can change your server's permissions without needing to
-            // recompile the client application.
-
-            // String[] scopeStrings = [
-            // "https://www.googleapis.com/auth/plus.login",
-            // "https://www.googleapis.com/auth/plus.me",
-            // "https://www.googleapis.com/auth/plus.login",
-            // "https://www.googleapis.com/auth/userinfo.email",
-            // "https://www.googleapis.com/auth/userinfo.profile"
-            // = 'https://www.googleapis.com/auth/plus.stream.write'
-            // ES] = 'https://www.googleapis.com/auth/plus.stream.write']
-
-
-            HttpClient httpClient = new DefaultHttpClient();
-            HttpGet httpGet = new HttpGet(SELECT_SCOPES_URL);
-            HashSet<Scope> serverScopeSet = new HashSet<Scope>();
-
-            try {
-                HttpResponse httpResponse = httpClient.execute(httpGet);
-                int responseCode = httpResponse.getStatusLine().getStatusCode();
-                String responseBody = EntityUtils.toString(httpResponse.getEntity());
-
-                // Convert the response to set of Scope objects.
-                if (responseCode == 200) {
-                    String[] scopeStrings = responseBody.split(" ");
-                    for (String scope : scopeStrings) {
-                        Log.i(TAG, "Server Scope: " + scope);
-                        serverScopeSet.add(new Scope(scope));
-                    }
-                } else {
-                    Log.e(TAG, "Error in getting server scopes: " + responseCode);
-                }
-
-            } catch (ClientProtocolException e) {
-                Log.e(TAG, "Error in getting server scopes.", e);
-            } catch (IOException e) {
-                Log.e(TAG, "Error in getting server scopes.", e);
-            }
-
-            // This tells GoogleApiClient that the server needs a new serverAuthCode with
-            // access to the scopes in serverScopeSet.  Note that we are not asking the server
-            // if it already has such a token because this is a sample application.  In reality,
-            // you should only do this on the first user sign-in or if the server loses or deletes
-            // the refresh token.
-            return CheckResult.newAuthRequiredResult(serverScopeSet);
-        } else {
-            // Server already has a valid refresh token with the correct scopes, no need to
-            // ask the user for offline access again.
-            return CheckResult.newAuthNotRequiredResult();
-        }
-*/
-    }
-
-    @Override
-    public boolean onUploadServerAuthCode(String idToken, String serverAuthCode) {
-        // Upload the serverAuthCode to the server, which will attempt to exchange it for
-        // a refresh token.  This callback occurs on a background thread, so it is OK
-        // to perform synchronous network access.  Returning 'false' will fail the
-        // GoogleApiClient.connect() call so if you would like the client to ignore
-        // server failures, always return true.
-        debugLog("onUploadServerAuthCode");
-        debugLog("idToken=" + idToken);
-        debugLog("serverAuthCode=" + serverAuthCode);
-        return true;
-/*
-        EXCHANGE_TOKEN_URL =  ""; //TODO
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost(EXCHANGE_TOKEN_URL);
-
-        try {
-            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-            nameValuePairs.add(new BasicNameValuePair("idToken", idToken));
-            nameValuePairs.add(new BasicNameValuePair("serverAuthCode", serverAuthCode));
-            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-            HttpResponse response = httpClient.execute(httpPost);
-            int statusCode = response.getStatusLine().getStatusCode();
-            final String responseBody = EntityUtils.toString(response.getEntity());
-            Log.i(TAG, "Code: " + statusCode);
-            Log.i(TAG, "Resp: " + responseBody);
-
-            // ...
-            return (statusCode == 200);
-        } catch (ClientProtocolException e) {
-            Log.e(TAG, "Error in auth code exchange.", e);
-            return false;
-        } catch (IOException e) {
-            Log.e(TAG, "Error in auth code exchange.", e);
-            return false;
-        }
-*/
     }
 
 }
