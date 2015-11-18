@@ -6,21 +6,31 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 
+import java.net.CookieHandler;
+import java.net.CookieManager;
+
 import org.json.JSONObject;
 import org.json.JSONException;
 
 import android.util.Log;
 
-import org.apache.http.client.HttpClient;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
+import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.cookie.BasicClientCookie;
+
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Scope;
@@ -36,6 +46,7 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
     String CHECK_TOKEN_URL;
     String SELECT_SCOPES_URL;
     String EXCHANGE_TOKEN_URL;
+
 
     public GameHelperToken(JSONObject serverSettings) {
 
@@ -82,6 +93,25 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
         }
     }
 
+    private BasicHttpContext setSessionCookie() {
+        BasicHttpContext localContext = new BasicHttpContext();
+        try {
+            BasicCookieStore cookieStore = new BasicCookieStore(); 
+            BasicClientCookie cookie = new BasicClientCookie("keyCode", SERVER_SETTINGS.getString("keyCode"));
+
+            cookie.setDomain(SERVER_SETTINGS.getString("serverURL"));
+            cookie.setPath("/");
+
+            cookieStore.addCookie(cookie); 
+
+            localContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
+        } catch (JSONException ex) {
+            Log.e(TAG, "Error in server settings.", ex);
+        }
+
+        return localContext;
+    }
+
     private boolean serverHasTokenFor(String idToken) {
         debugLog("idToken =" + idToken);
 
@@ -92,19 +122,21 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
             nameValuePairs.add(new BasicNameValuePair("idToken", idToken));
             httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
-            HttpResponse response = httpClient.execute(httpPost);
+            HttpResponse response = httpClient.execute(httpPost, setSessionCookie());
             int statusCode = response.getStatusLine().getStatusCode();
             final String responseBody = EntityUtils.toString(response.getEntity());
-            Log.i(TAG, "Code: " + statusCode);
-            Log.i(TAG, "Resp: " + responseBody);
+            Log.i(TAG, "Code serverHasToken: " + statusCode);
+            Log.i(TAG, "Resp serverHasToken: " + responseBody);
             return (statusCode == 200);
+
         } catch (ClientProtocolException e) {
             Log.e(TAG, "Error in auth code exchange.", e);
             return false;
         } catch (IOException e) {
             Log.e(TAG, "Error in auth code exchange.", e);
             return false;
-        }
+        } 
+
     }
 
     @Override
@@ -132,9 +164,12 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
             HashSet<Scope> serverScopeSet = new HashSet<Scope>();
 
             try {
-                HttpResponse httpResponse = httpClient.execute(httpGet);
+                HttpResponse httpResponse = httpClient.execute(httpGet, setSessionCookie());
                 int responseCode = httpResponse.getStatusLine().getStatusCode();
                 String responseBody = EntityUtils.toString(httpResponse.getEntity());
+
+                Log.i(TAG, "Code checkScopes: " + responseCode);
+                Log.i(TAG, "Resp checkScopes: " + responseBody);
 
                 // Convert the response to set of Scope objects.
                 if (responseCode == 200) {
@@ -145,6 +180,7 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
                     }
                 } else {
                     Log.e(TAG, "Error in getting server scopes: " + responseCode);
+                    serverScopeSet.add(Games.SCOPE_GAMES);
                 }
 
             } catch (ClientProtocolException e) {
@@ -158,6 +194,7 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
             // if it already has such a token because this is a sample application.  In reality,
             // you should only do this on the first user sign-in or if the server loses or deletes
             // the refresh token.
+            debugLog("serverScopeSet=" + serverScopeSet);
             return CheckResult.newAuthRequiredResult(serverScopeSet);
         } else {
             // Server already has a valid refresh token with the correct scopes, no need to
@@ -187,7 +224,7 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
             nameValuePairs.add(new BasicNameValuePair("serverAuthCode", serverAuthCode));
             httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
-            HttpResponse response = httpClient.execute(httpPost);
+            HttpResponse response = httpClient.execute(httpPost, setSessionCookie());
             int statusCode = response.getStatusLine().getStatusCode();
             final String responseBody = EntityUtils.toString(response.getEntity());
             Log.i(TAG, "Code: " + statusCode);
