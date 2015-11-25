@@ -453,7 +453,13 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 
 	//-------------------------------------
 	private void _setUp(){
-		getGameHelper().setup(this);//public void setup(GameHelperListener listener) {
+		try {
+			getGameHelper().setup(this);//public void setup(GameHelperListener listener) {
+		} catch (IllegalStateException ex) {
+			Log.i(LOG_TAG, "resetup GameServices Plugin");
+			mHelper = null;
+			getGameHelper().setup(this);
+		}
 		cordova.setActivityResultCallback(this);
 
 	}

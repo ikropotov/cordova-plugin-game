@@ -126,8 +126,14 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
             int statusCode = response.getStatusLine().getStatusCode();
             final String responseBody = EntityUtils.toString(response.getEntity());
             Log.i(TAG, "Code serverHasToken: " + statusCode);
-            Log.i(TAG, "Resp serverHasToken: " + responseBody);
-            return (statusCode == 200);
+            Log.i(TAG, "Resp serverHasToken:" + responseBody + ".");
+            Log.i(TAG, "Resp type: " + responseBody.getClass().getName());
+            Log.i(TAG, "Resp boolean: " + Boolean.valueOf(responseBody));
+            if (statusCode == 200) {
+                return Boolean.valueOf(responseBody) == true;
+            } else {
+                return true; //server error so don't request anything
+            }
 
         } catch (ClientProtocolException e) {
             Log.e(TAG, "Error in auth code exchange.", e);
@@ -231,7 +237,11 @@ public class GameHelperToken implements GoogleApiClient.ServerAuthCodeCallbacks 
             Log.i(TAG, "Resp: " + responseBody);
 
             // ...
-            return (statusCode == 200);
+            if (statusCode == 200) {
+                return Boolean.valueOf(responseBody) == true;
+            } else {
+                return false; //server error so don't request anything
+            }
         } catch (ClientProtocolException e) {
             Log.e(TAG, "Error in auth code exchange.", e);
             return false;
