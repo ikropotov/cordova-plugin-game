@@ -6,12 +6,38 @@
 
 <script>
 //
-var leaderboardId = "CgkI2O2VnNMUEAIQBg ";
-var achievementId1 = " CgkI2O2VnNMUEAIQAQ";
-var achievementId2 = " CgkI2O2VnNMUEAIQBw";
-var achievementId3 = " CgkI2O2VnNMUEAIQBA";
-var achievementId4 = " CgkI2O2VnNMUEAIQAg";
-var achievementId5 = " CgkI2O2VnNMUEAIQBQ";
+var leaderboardId = "CgkI2O2VnNMUEAIQBg";
+var achievementId1 = "CgkI2O2VnNMUEAIQAQ";
+var achievementId2 = "CgkI2O2VnNMUEAIQBw";
+var achievementId3 = "CgkI2O2VnNMUEAIQBA";
+var achievementId4 = "CgkI2O2VnNMUEAIQAg";
+var achievementId5 = "CgkI2O2VnNMUEAIQBQ";
+/*
+var leaderboardId;
+var achievementId1;
+var achievementId2;
+var achievementId3;
+var achievementId4;
+var achievementId5;
+//android
+if (navigator.userAgent.match(/Android/i)) {
+	leaderboardId = "CgkI2O2VnNMUEAIQBg";
+	achievementId1 = "CgkI2O2VnNMUEAIQAQ";
+	achievementId2 = "CgkI2O2VnNMUEAIQBw";
+	achievementId3 = "CgkI2O2VnNMUEAIQBA";
+	achievementId4 = "CgkI2O2VnNMUEAIQAg";
+	achievementId5 = "CgkI2O2VnNMUEAIQBQ";
+}
+//ios
+else if (navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i)) {
+	leaderboardId = "testapp_leaderboard";
+	achievementId1 = "testapp_achievement1";
+	achievementId2 = "testapp_achievement2";
+	achievementId3 = "testapp_achievement3";
+	achievementId4 = "testapp_achievement4";
+	achievementId5 = "testapp_achievement5";
+}
+*/
 
 //
 document.addEventListener("deviceready", function(){
@@ -25,12 +51,12 @@ document.addEventListener("deviceready", function(){
     window.game.onLoginFailed = function() {
         alert('onLoginFailed');
     };
-    window.game.onGetPlayerImageSucceeded = function(result) {
-		var playerImageUrl = result;
-        alert('onGetPlayerImageSucceeded: ' + playerImageUrl);
-    };
-    window.game.onGetPlayerImageFailed = function() {
-        alert('onGetPlayerImageFailed');
+	//	
+    window.game.onSubmitScoreSucceeded = function() {
+        alert('onSubmitScoreSucceeded');
+    };	
+    window.game.onSubmitScoreFailed = function() {
+        alert('onSubmitScoreFailed');
     };	
     window.game.onGetPlayerScoreSucceeded = function(result) {
 		var playerScore = result;
@@ -39,13 +65,6 @@ document.addEventListener("deviceready", function(){
     window.game.onGetPlayerScoreFailed = function() {
         alert('onGetPlayerScoreFailed');
     };
-	//	
-    window.game.onSubmitScoreSucceeded = function() {
-        alert('onSubmitScoreSucceeded');
-    };	
-    window.game.onSubmitScoreFailed = function() {
-        alert('onSubmitScoreFailed');
-    };	
 	//	
     window.game.onUnlockAchievementSucceeded = function() {
         alert('onUnlockAchievementSucceeded');
@@ -65,17 +84,24 @@ document.addEventListener("deviceready", function(){
     window.game.onResetAchievementsFailed = function() {
         alert('onResetAchievementsFailed');
     };
+	//
+    window.game.onGetPlayerImageSucceeded = function(result) {
+		var playerImageUrl = result;
+        alert('onGetPlayerImageSucceeded: ' + playerImageUrl);
+    };
+    window.game.onGetPlayerImageFailed = function() {
+        alert('onGetPlayerImageFailed');
+    };	
 }, false);
 </script>
 
 <p><button onclick="window.game.login();">login</button></p>
 <p><button onclick="window.game.logout();">logout</button></p>
 <p><button onclick="alert(window.game.isLoggedIn());">isLoggedIn</button></p>
-<p><button onclick="window.game.getPlayerImage();">getPlayerImage</button></p>
-<p><button onclick="window.game.getPlayerScore(leaderboardId);">getPlayerScore</button></p>
 <br>
 <p><button onclick="window.game.submitScore(leaderboardId, 5);//leaderboardId, score">submitScore</button></p>
 <p><button onclick="window.game.showLeaderboard(leaderboardId);">showLeaderboard</button></p>
+<p><button onclick="window.game.getPlayerScore(leaderboardId);">getPlayerScore</button></p>
 <br>
 <p><button onclick="window.game.unlockAchievement(achievementId1);">unlockAchievement1</button></p>
 <p><button onclick="window.game.unlockAchievement(achievementId2);">unlockAchievement2</button></p>
@@ -89,6 +115,8 @@ document.addEventListener("deviceready", function(){
 <p><button onclick="window.game.incrementAchievement(achievementId5, 2);">incrementAchievement5</button></p>
 <p><button onclick="window.game.showAchievements();">showAchievements</button></p>
 <p><button onclick="window.game.resetAchievements();">resetAchievements</button></p>
+<br>
+<p><button onclick="window.game.getPlayerImage();">getPlayerImage</button></p>
 
 </body>
 </html>

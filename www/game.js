@@ -39,32 +39,6 @@ module.exports = {
 	isLoggedIn: function () {
 		return this._loggedin;
 	},
-	getPlayerImage: function () {
-		var self = this;
-		cordova.exec(function (result) {
-				var playerImageUrl = result;
-				if (self.onGetPlayerImageSucceeded)
-					self.onGetPlayerImageSucceeded(playerImageUrl);
-			},
-			function (error) {
-				if (self.onGetPlayerImageFailed)
-					self.onGetPlayerImageFailed();
-			}, "Game", "getPlayerImage", []);
-	},
-	getPlayerScore: function (leaderboardId, tag) {
-		var self = this;
-		cordova.exec(function (result) {
-				var playerScore = result;
-				self.tag = tag;
-				if (self.onGetPlayerScoreSucceeded)
-					self.onGetPlayerScoreSucceeded(playerScore);
-			},
-			function (error) {
-				self.tag = tag;
-				if (self.onGetPlayerScoreFailed)
-					self.onGetPlayerScoreFailed();
-			}, "Game", "getPlayerScore", [leaderboardId]);
-	},
 	submitScore: function (leaderboardId, score, tag) {
 		var self = this;
 		cordova.exec(function (result) {
@@ -84,6 +58,20 @@ module.exports = {
 			},
 			function (error) {
 			}, "Game", "showLeaderboard", [leaderboardId]);
+	},
+	getPlayerScore: function (leaderboardId, tag) {
+		var self = this;
+		cordova.exec(function (result) {
+			var playerScore = result;
+			self.tag = tag;
+			if (self.onGetPlayerScoreSucceeded)
+				self.onGetPlayerScoreSucceeded(playerScore);
+		},
+		function (error) {
+			self.tag = tag;
+			if (self.onGetPlayerScoreFailed)
+				self.onGetPlayerScoreFailed();
+		}, "Game", "getPlayerScore", [leaderboardId]);
 	},
 	unlockAchievement: function (achievementId, tag) {
 		var self = this;
@@ -121,25 +109,37 @@ module.exports = {
 	resetAchievements: function () {
 		var self = this;
 		cordova.exec(function (result) {
-				if (self.onResetAchievementsSucceeded)
-					self.onResetAchievementsSucceeded();
-			},
-			function (error) {
-				if (self.onResetAchievementsFailed)
-					self.onResetAchievementsFailed();
-			}, "Game", "resetAchievements", []);
+			if (self.onResetAchievementsSucceeded)			
+				self.onResetAchievementsSucceeded();
+		}, 
+		function (error) {
+			if (self.onResetAchievementsFailed)			
+				self.onResetAchievementsFailed();
+		}, "Game", "resetAchievements", []);
+	},
+	getPlayerImage: function () {
+		var self = this;
+		cordova.exec(function (result) {
+			var playerImageUrl = result;
+			if (self.onGetPlayerImageSucceeded)
+				self.onGetPlayerImageSucceeded(playerImageUrl);
+		},
+		function (error) {
+			if (self.onGetPlayerImageFailed)
+				self.onGetPlayerImageFailed();
+		}, "Game", "getPlayerImage", []);
 	},
 	getTokenCode: function () {
 		var self = this;
 		cordova.exec(function (result) {
-				var userServerCode = result;
-				if (self.onGetTokenCodeSucceeded)
-					self.onGetTokenCodeSucceeded(userServerCode);
-			},
-			function (error) {
-				if (self.onGetTokenCodeFailed)
-					self.onGetTokenCodeFailed(error);
-			}, "Game", "getTokenCode", []);
+					var userServerCode = result;
+					if (self.onGetTokenCodeSucceeded)
+						self.onGetTokenCodeSucceeded(userServerCode);
+				},
+				function (error) {
+					if (self.onGetTokenCodeFailed)
+						self.onGetTokenCodeFailed(error);
+				}, "Game", "getTokenCode", []);
 	},
 	onLoginSucceeded: null,
 	onLoginFailed: null,

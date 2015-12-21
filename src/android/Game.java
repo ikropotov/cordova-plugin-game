@@ -601,11 +601,16 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 	}
 
 	private void _showLeaderboard(String leaderboardId){
-		//show all leaderboards
-		//this.cordova.getActivity().startActivityForResult(Games.Leaderboards.getAllLeaderboardsIntent(getGameHelper().getApiClient()), 0);
-		//this.cordova.getActivity().startActivityFor(Games.Leaderboards.getAllLeaderboardsIntent(getGameHelper().getApiClient()));
-		//show a specific leaderboard
-		this.cordova.getActivity().startActivityForResult(Games.Leaderboards.getLeaderboardIntent(getGameHelper().getApiClient(), leaderboardId), 0);
+		try {
+			//show all leaderboards
+			//this.cordova.getActivity().startActivityForResult(Games.Leaderboards.getAllLeaderboardsIntent(getGameHelper().getApiClient()), 0);
+			//this.cordova.getActivity().startActivityFor(Games.Leaderboards.getAllLeaderboardsIntent(getGameHelper().getApiClient()));
+			//show a specific leaderboard
+			this.cordova.getActivity().startActivityForResult(Games.Leaderboards.getLeaderboardIntent(getGameHelper().getApiClient(), leaderboardId), 0);
+		}
+		catch(SecurityException ex) {
+			Log.d(LOG_TAG, String.format("%s", ex.getMessage()));
+		}
 	}
 
 	private void _unlockAchievement(String achievementId){
@@ -751,7 +756,7 @@ public class Game extends CordovaPlugin implements GameHelper.GameHelperListener
 				// this.webView.loadUrl(String.format("javascript:console.log(\"%s\",\"%s\");", "context", c));
 				System.out.println("context");
 				System.out.println(c);
-			
+
 				code = GoogleAuthUtil.getToken(
 					c,                             // Context context
 					strings[0],               // String accountName

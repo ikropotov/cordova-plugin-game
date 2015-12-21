@@ -46,6 +46,8 @@ Achievement
 ```
 # Change log #
 ```c
+	1.0.109
+		Fixed crash issue when show leaderbord after logout.
 ```
 # Install plugin #
 
@@ -217,6 +219,32 @@ var achievementId2 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID2";
 var achievementId3 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID3";
 var achievementId4 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID4";
 var achievementId5 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID5";
+/*
+var leaderboardId;
+var achievementId1;
+var achievementId2;
+var achievementId3;
+var achievementId4;
+var achievementId5;
+//android
+if (navigator.userAgent.match(/Android/i)) {
+	leaderboardId = "REPLACE_THIS_WITH_YOUR_LEADERBOARD_ID";
+	achievementId1 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID1";
+	achievementId2 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID2";
+	achievementId3 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID3";
+	achievementId4 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID4";
+	achievementId5 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID5";
+}
+//ios
+else if (navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i)) {
+	leaderboardId = "REPLACE_THIS_WITH_YOUR_LEADERBOARD_ID";
+	achievementId1 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID1";
+	achievementId2 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID2";
+	achievementId3 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID3";
+	achievementId4 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID4";
+	achievementId5 = "REPLACE_THIS_WITH_YOUR_ACHIEVEMENT_ID5";
+}
+*/
 
 //
 document.addEventListener("deviceready", function(){
@@ -230,26 +258,19 @@ document.addEventListener("deviceready", function(){
     window.game.onLoginFailed = function() {
         alert('onLoginFailed');
     };
-    window.game.onGetPlayerImageSucceeded = function(result) {
-		var playerImageUrl = result;
-        alert('onGetPlayerImageSucceeded: ' + playerImageUrl);
-    };
-    window.game.onGetPlayerImageFailed = function() {
-        alert('onGetPlayerImageFailed');
-    };	
-    window.game.onGetPlayerScoreSucceeded = function(result) {
-		var playerScore = result;
-        alert('onGetPlayerScoreSucceeded: ' + playerScore);
-    };
-    window.game.onGetPlayerScoreFailed = function() {
-        alert('onGetPlayerScoreFailed');
-    };
 	//	
     window.game.onSubmitScoreSucceeded = function() {
         alert('onSubmitScoreSucceeded');
     };	
     window.game.onSubmitScoreFailed = function() {
         alert('onSubmitScoreFailed');
+    };
+    window.game.onGetPlayerScoreSucceeded = function(result) {
+		var playerScore = result;
+        alert('onGetPlayerScoreSucceeded: ' + playerScore);
+    };
+    window.game.onGetPlayerScoreFailed = function() {
+        alert('onGetPlayerScoreFailed');
     };	
 	//	
     window.game.onUnlockAchievementSucceeded = function() {
@@ -270,18 +291,25 @@ document.addEventListener("deviceready", function(){
     window.game.onResetAchievementsFailed = function() {
         alert('onResetAchievementsFailed');
     };
+	//
+    window.game.onGetPlayerImageSucceeded = function(result) {
+		var playerImageUrl = result;
+        alert('onGetPlayerImageSucceeded: ' + playerImageUrl);
+    };
+    window.game.onGetPlayerImageFailed = function() {
+        alert('onGetPlayerImageFailed');
+    };		
 }, false);
 
 //
 window.game.login();
 window.game.logout();
 alert(window.game.isLoggedIn());
-window.game.getPlayerImage();
-window.game.getPlayerScore(leaderboardId);
 
 //
 window.game.submitScore(leaderboardId, 5);//leaderboardId, score
 window.game.showLeaderboard(leaderboardId);
+window.game.getPlayerScore(leaderboardId);
 
 //
 window.game.unlockAchievement(achievementId1);
@@ -296,6 +324,10 @@ window.game.incrementAchievement(achievementId4, 2);
 window.game.incrementAchievement(achievementId5, 2);
 window.game.showAchievements();
 window.game.resetAchievements();//only supported on ios
+
+//
+window.game.getPlayerImage();
+
 ```
 # Examples #
 <a href="https://github.com/cranberrygame/com.cranberrygame.phonegap.plugin.game/blob/master/example/basic/index.html">example/index.html</a><br>
@@ -343,7 +375,15 @@ Setting - Game Center - Logout with previous ios account and login with other io
 itunes connect - User and role - Sand box test - add tester (not real email but faked email)
 
 //iphone sand box (Caution!)
+//The requested operation could not be completed because the application is not recognized by Game Center.
 iphone - Setting - Game Center - activate sand box mode - login with itunes connect sand box account in the app 
+```
+
+```c
+the requested operation has been canceled or disabled by the user
+Reenabling GameCenter after user-cancelled 3 times (iOS7 only)
+iphone - Setting - General - Reset - Reset All Settings
+http://stackoverflow.com/questions/18927723/reenabling-gamecenter-after-user-cancelled-3-times-ios7-only
 ```
 
 # Useful links #
